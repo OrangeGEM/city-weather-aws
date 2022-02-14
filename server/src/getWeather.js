@@ -14,14 +14,12 @@ function responseJson( statusCode, body ) {
 exports.getWeather = async (event) => {
     const { city } = event.pathParameters;
 
-    console.log(process.env.SECRET_NAME, process.env.REGION);
-
     const secret = await getSecret(process.env.SECRET_NAME, process.env.REGION);
     const client = createClient({ url: process.env.REDIS_URL })
 
-    const cachedCity = await client.get(`${city}`)
+    const cachedCity = await client.get(city)
     if(cachedCity) {
-        return responseJson(JSON.parse(cachedCity));
+        return responseJson(JSON.parse(200, cachedCity));
     }
     
     const endpoint = process.env.API_URL;
@@ -30,7 +28,7 @@ exports.getWeather = async (event) => {
     });
 
     if('error' in data) {
-        return responseJson(200, { error: true });
+        return responseJson(500, { error: true });
     }
 
     const responseData = {
@@ -44,8 +42,6 @@ exports.getWeather = async (event) => {
     }
 
     await client.set(`${city}`, JSON.stringify(responseData));
-
-    console.log(responseJson(200, responseData));
 
     return responseJson(200, responseData);
 }
