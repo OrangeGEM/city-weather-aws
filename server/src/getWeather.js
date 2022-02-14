@@ -1,18 +1,51 @@
 'use strict';
 
-module.exports.getWeather = async (event) => {
-  return {
-    statusCode: 200,
-    body: JSON.stringify(
-      {
-        message: 'Go Serverless v1.0! Your function executed successfully!',
-        input: event,
-      },
-      null,
-      2
-    ),
-  };
+const { getSecret } = require("./secretManager");
+const { createClient } = require("redis");
 
-  // Use this code if you don't use the http event with the LAMBDA-PROXY integration
-  // return { message: 'Go Serverless v1.0! Your function executed successfully!', event };
-};
+
+function responseJson( statusCode, body ) {
+    return {
+        statusCode,
+        body: JSON.stringify(body)
+    };
+}
+
+exports.getWeather = async (event) => {
+    const { city } = event.pathParameters;
+
+    console.log(process.env.SECRET_NAME, process.env.REGION);
+
+    const secret = await getSecret(process.env.SECRET_NAME, process.env.REGION);
+    const client = createClient({ url: process.env.REDIS_URL })
+
+    const cachedCity = await client.get(`${city}`)
+    if(cachedCity) {
+        return responseJson(JSON.parse(cachedCity));
+    }
+    
+    const endpoint = process.env.API_URL;
+    const { data } = await axios.get(endpoint, {
+        params: { access_key: secret, query: city }
+    });
+
+    if('error' in data) {
+        return responseJson(200, { error: true });
+    }
+
+    const responseData = {
+        city: data.location.name,
+        temperature: data.current.temperature,
+        textWeather: data.current.weather_descriptions,
+        windSpeed: data.current.wind_speed,
+        windDir: data.current.wind_dir,
+        pressure: data.current.pressure,
+        humidity: data.current.humidity,
+    }
+
+    await client.set(`${city}`, JSON.stringify(responseData));
+
+    console.log(responseJson(200, responseData));
+
+    return responseJson(200, responseData);
+}
