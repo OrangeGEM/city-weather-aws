@@ -19,7 +19,7 @@ exports.getWeather = async (event) => {
 
     const cachedCity = await client.get(city)
     if(cachedCity) {
-        return responseJson(JSON.parse(200, cachedCity));
+        return responseJson(200, JSON.parse(cachedCity));
     }
     
     const endpoint = process.env.API_URL;
