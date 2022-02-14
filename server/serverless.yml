@@ -1,0 +1,16 @@
+service: aws-lambda-weather-app
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: us-east-1
+
+functions:
+  getWeather:
+    handler: handler.getWeather
+    events:
+      - http:
+          path: /weather/{city}
+          method: get
