@@ -15,7 +15,7 @@ function App() {
     
     try {
       const requestWeather = await axios({
-        url: `https://wft7rw41de.execute-api.us-east-1.amazonaws.com/default/getCurrentWeather?cityName=${target.city.value}`,
+        url: `http://localhost:3000/dev/weather/${target.city.value}`,
       })
       console.log(requestWeather.data);
     } catch(e) {
